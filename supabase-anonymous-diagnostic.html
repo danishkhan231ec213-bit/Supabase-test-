@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Supabase Connection Test</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#0b0b0d;color:#f0eee9;padding:24px}
+button{padding:14px 18px;border:0;border-radius:10px;font-size:16px}
+#status{margin-top:18px;padding:16px;border:1px solid #333;border-radius:10px;white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body>
+<h2>Partnership Test — Supabase Diagnostic</h2>
+<p>This page only tests Supabase anonymous authentication. It does not touch your orders.</p>
+<button id="test">Test Supabase Connection</button>
+<div id="status">Waiting for test…</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://jykrvwacqqjtmjvvxpfz.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Uj0hh26F2LU9A-2tPOOEmg_C5SvdXbm";
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const status = document.getElementById("status");
+
+async function runTest(){
+  status.textContent = "1. Supabase library loaded.\n2. Checking existing session…";
+  try {
+    const sessionResult = await client.auth.getSession();
+    if (sessionResult.error) throw sessionResult.error;
+
+    if (sessionResult.data.session) {
+      status.textContent += "\nExisting session found.\nUser ID: " + sessionResult.data.session.user.id;
+      return;
+    }
+
+    status.textContent += "\nNo session. Starting anonymous sign-in…";
+    const result = await client.auth.signInAnonymously();
+
+    if (result.error) throw result.error;
+
+    status.textContent += "\nSUCCESS!\nAnonymous user ID: " + result.data.user.id +
+      "\n\nGo to Supabase → Authentication → Users and refresh.";
+  } catch (e) {
+    status.textContent += "\n\nFAILED\nName: " + (e.name || "") +
+      "\nMessage: " + (e.message || "") +
+      "\nStatus: " + (e.status || "") +
+      "\nCode: " + (e.code || "");
+    console.error(e);
+  }
+}
+document.getElementById("test").onclick = runTest;
+</script>
+</body>
+</html>
