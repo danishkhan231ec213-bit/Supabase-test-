@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Supabase Database Diagnostic</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#0b0b0d;color:#f0eee9;padding:24px}
+button{padding:14px 18px;border:0;border-radius:10px;font-size:16px}
+pre{margin-top:18px;padding:16px;border:1px solid #333;border-radius:10px;white-space:pre-wrap;word-break:break-word}
+.ok{color:#9fdf9f}.bad{color:#ff9b9b}
+</style>
+</head>
+<body>
+<h2>Partnership Test — Database Diagnostic</h2>
+<p>This tests the four Supabase tables using the current authenticated browser session. It does not create or modify any data.</p>
+<button id="test">Test Database Access</button>
+<pre id="out">Waiting for test…</pre>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://jykrvwacqqjtmjvvxpfz.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Uj0hh26F2LU9A-2tPOOEmg_C5SvdXbm";
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const out = document.getElementById("out");
+
+async function testTable(name){
+  const result = await client.from(name).select("*").limit(1);
+  if(result.error){
+    return "❌ " + name + "\n" +
+      "message: " + (result.error.message || "") + "\n" +
+      "code: " + (result.error.code || "") + "\n" +
+      "details: " + (result.error.details || "") + "\n" +
+      "hint: " + (result.error.hint || "");
+  }
+  return "✅ " + name + " — SELECT worked (" + (result.data || []).length + " row(s) returned)";
+}
+
+async function run(){
+  out.textContent = "Checking session…";
+  try{
+    const s = await client.auth.getSession();
+    if(s.error) throw s.error;
+    if(!s.data.session){
+      out.textContent = "❌ No authenticated session. Open the anonymous diagnostic first.";
+      return;
+    }
+
+    out.textContent = "Session OK. User ID: " + s.data.session.user.id + "\n\n";
+    for(const table of ["orders","finance_months","cost_windows","app_settings"]){
+      out.textContent += await testTable(table) + "\n\n";
+    }
+  }catch(e){
+    out.textContent += "\n❌ FAILED\n" +
+      "message: " + (e.message || "") + "\n" +
+      "code: " + (e.code || "") + "\n" +
+      "status: " + (e.status || "");
+  }
+}
+document.getElementById("test").onclick = run;
+</script>
+</body>
+</html>
